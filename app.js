@@ -31,6 +31,7 @@ app.get('/register', function (req, res) {
 			"name": "Example",
 			"baseUrl": "https://www.google.com/",
 			"logoUrl": "https://hoppercloud.net/img/logo.svg",
+			"imageUrl": "https://hoppercloud.net/img/logo.svg",
 			"contactEmail": "noreplay@hoppercloud.net",
 			"cert": base
 		}
