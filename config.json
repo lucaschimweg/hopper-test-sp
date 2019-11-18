@@ -1,6 +1,1 @@
-{
-	"baseUrl": "dev.hoppercloud.net",
-	"publicKey": "localFiles/publickey.txt",
-	"privateKey": "localFiles/privatekey.txt",
-	"passphrase": "localFiles/passphrase.txt"
-}
+{"baseUrl":"dev.hoppercloud.net","publicKey":"localFiles/publickey.txt","privateKey":"localFiles/privatekey.txt","passphrase":"localFiles/passphrase.txt","id":"5dd26eec4603121426c2848a"}

@@ -45,10 +45,12 @@ app.get('/register', function (req, res) {
 		if (body.status === 'success'){
 			config.id = body.id;
 			console.log(config);
+			fs.writeFileSync('config.json', JSON.stringify(config));
+			console.log('update config file');
 		}
 	});
 	
-	
+	res.write(' ------> registration finished');
 	res.end(); 
 	
 });
@@ -70,6 +72,8 @@ app.get('/keygen', function (req, res) {
   
   console.log('\nkeygen:');
   
+  var passphrase = fs.readFileSync(config.passphrase, "utf8").trim();
+  
   const { generateKeyPair } = require('crypto');
   generateKeyPair('rsa', {
 	  modulusLength: 2048,
@@ -81,7 +85,7 @@ app.get('/keygen', function (req, res) {
 		type: 'pkcs8',
 		format: 'pem',
 		cipher: 'aes-256-cbc',
-		passphrase: config.passphrase
+		passphrase: passphrase
 	  }
 	}, (err, publicKey, privateKey) => {
 	  // Handle errors and use the generated key pair.
@@ -109,8 +113,6 @@ app.listen(3000, function () {
   //get data from config.json
   console.log('\nconfig setup:');
   config = JSON.parse(fs.readFileSync('config.json'));
-  //get passphrase first in the programm
-  config.passphrase = fs.readFileSync(config.passphrase, "utf8").trim();
   console.log(config);
 });
 
