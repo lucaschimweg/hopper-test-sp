@@ -42,6 +42,10 @@ app.get('/register', function (req, res) {
 		}
 		console.log(`statusCode: ${res.statusCode}`)
 		console.log(body)
+		if (body.status === 'success'){
+			config.id = body.id;
+			console.log(config);
+		}
 	});
 	
 	
