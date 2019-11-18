@@ -1,0 +1,9 @@
+*/**/node_modules
+out
+.build
+*/.build
+.DS_Store
+.idea/
+.vs/
+localFiles/
+*/coverage/
