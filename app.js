@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const https = require('https');
 const path = require("path");
 
+let config;
 
 app.get('/', function (req, res) {
   fs.readFile('web.html', function(err, data){
@@ -71,6 +72,10 @@ app.get('/keygen', function (req, res) {
 
 app.listen(3000, function () {
   console.log('Mockup service provider listening on port 3000!');
+  //get data from config.json
+  console.log('\nconfig setup:');
+  config = JSON.parse(fs.readFileSync('config.json'));
+  console.log(config);
 });
 
 app.get('/crypt', function (req, res) {
