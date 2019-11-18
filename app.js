@@ -4,6 +4,7 @@ const fs = require('fs');
 const https = require('https');
 const path = require("path");
 const request = require("request");
+const crypto = require("crypto");
 
 let config;
 
@@ -11,7 +12,6 @@ app.get('/', function (req, res) {
   fs.readFile('web.html', function(err, data){
 	res.writeHead(200, {'Content-Type': 'text/html'});
     res.write(data);
-	
     res.end();  
   });
 });
@@ -20,22 +20,9 @@ app.get('/register', function (req, res) {
 	res.writeHead(200, {'Content-Type': 'text/html'});
 	res.write('registration is in process');
 	
-	var absolutePath = path.resolve(config.publicKey);
-	var publicKey = fs.readFileSync(absolutePath, "utf8");
-	var base = Buffer.from(publicKey).toString('base64');
-	
 	console.log('\nregistration:');
 	
-	request.post('https://' + config.baseUrl + '/api/v1/app', {
-		json: {
-			"name": "Example",
-			"baseUrl": "https://www.google.com/",
-			"logoUrl": "https://hoppercloud.net/img/logo.svg",
-			"imageUrl": "https://hoppercloud.net/img/logo.svg",
-			"contactEmail": "noreplay@hoppercloud.net",
-			"cert": base
-		}
-	}, (error, res, body) => {
+	request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, config.details, {cert:config.cert})}, (error, res, body) => {
 		if (error) {
 			console.error(error)
 			return
@@ -55,15 +42,50 @@ app.get('/register', function (req, res) {
 	
 });
 
-app.get('/publickey', function (req, res) {
+app.get('/update', function (req, res) {
 	res.writeHead(200, {'Content-Type': 'text/html'});
-	var absolutePath = path.resolve('publickey.txt');
-	var publicKey = fs.readFileSync(absolutePath, "utf8");
-	var base = Buffer.from(publicKey).toString('base64');
-	res.write(base);
+	res.write('update service provider is in process');
 	
+	console.log('\nupdate:');
+	
+	var passphrase = fs.readFileSync(config.passphrase, "utf8").trim();
+	var privateKey = fs.readFileSync(config.privateKey, "utf8");
+	var toEncrypt = Buffer.from(JSON.stringify(config.details));
+	console.log(toEncrypt.length);
+	var encrypted = crypto.privateEncrypt(
+		{
+			key : privateKey,
+			passphrase: passphrase
+		},
+		toEncrypt);
+	
+	console.log(encrypted);
+	
+	var publicKey = fs.readFileSync(config.publicKey, "utf8");
+	var todecrypt = Buffer.from(encrypted, "base64");
+	var decrypted = crypto.publicDecrypt(publicKey, buffer);
+	
+	console.log(decrypted);
+	
+	/*
+	request.post('https://' + config.baseUrl + '/api/v1/app', config.details, (error, res, body) => {
+		if (error) {
+			console.error(error)
+			return
+		}
+		console.log(`statusCode: ${res.statusCode}`)
+		console.log(body)
+		if (body.status === 'success'){
+			config.id = body.id;
+			console.log(config);
+			fs.writeFileSync('config.json', JSON.stringify(config));
+			console.log('update config file');
+		}
+	});
+	*/
+	res.write(' ------> update finished');
 	res.end(); 
-	console.log('publicKey');
+	
 });
 
 app.get('/keygen', function (req, res) {
@@ -89,6 +111,8 @@ app.get('/keygen', function (req, res) {
 	  }
 	}, (err, publicKey, privateKey) => {
 	  // Handle errors and use the generated key pair.
+	  if (err) throw err;
+	  
 	  console.log(publicKey);
 	  fs.writeFile(config.publicKey, publicKey, function (err) {
 		if (err) throw err;
@@ -100,6 +124,11 @@ app.get('/keygen', function (req, res) {
 		if (err) throw err;
 		console.log('Saved private key!');
 	  });
+	  
+	  config.cert = Buffer.from(publicKey).toString('base64');
+      console.log(config);
+	  fs.writeFileSync('config.json', JSON.stringify(config));
+	  console.log('update config file');
 	  
 	});
 	
