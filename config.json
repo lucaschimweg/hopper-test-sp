@@ -1,5 +1,6 @@
 {
 	"baseUrl": "dev.hoppercloud.net",
-	"keys": "localFiles/",
-	"passphrase": "localFiles/"
+	"publicKey": "localFiles/publickey.txt",
+	"privateKey": "localFiles/privatekey.txt",
+	"passphrase": "localFiles/passphrase.txt"
 }

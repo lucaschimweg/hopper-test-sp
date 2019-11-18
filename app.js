@@ -1,9 +1,9 @@
 const express = require('express');
 const app = express();
 const fs = require('fs');
-const crypto = require('crypto');
 const https = require('https');
 const path = require("path");
+const request = require("request");
 
 let config;
 
@@ -17,11 +17,35 @@ app.get('/', function (req, res) {
 });
 
 app.get('/register', function (req, res) {
-	
 	res.writeHead(200, {'Content-Type': 'text/html'});
 	res.write('registration is in process');
+	
+	var absolutePath = path.resolve(config.publicKey);
+	var publicKey = fs.readFileSync(absolutePath, "utf8");
+	var base = Buffer.from(publicKey).toString('base64');
+	
+	console.log('\nregistration:');
+	
+	request.post('https://' + config.baseUrl + '/api/v1/app', {
+		json: {
+			"name": "Example",
+			"baseUrl": "https://www.google.com/",
+			"logoUrl": "https://hoppercloud.net/img/logo.svg",
+			"contactEmail": "noreplay@hoppercloud.net",
+			"cert": base
+		}
+	}, (error, res, body) => {
+		if (error) {
+			console.error(error)
+			return
+		}
+		console.log(`statusCode: ${res.statusCode}`)
+		console.log(body)
+	});
+	
+	
 	res.end(); 
-	console.log('registration');
+	
 });
 
 app.get('/publickey', function (req, res) {
@@ -36,8 +60,10 @@ app.get('/publickey', function (req, res) {
 });
 
 app.get('/keygen', function (req, res) {
-  res.redirect('/');
-  console.log('keygen');
+  res.writeHead(200, {'Content-Type': 'text/html'});
+  res.write('key generation has started');
+  
+  console.log('\nkeygen:');
   
   const { generateKeyPair } = require('crypto');
   generateKeyPair('rsa', {
@@ -50,23 +76,26 @@ app.get('/keygen', function (req, res) {
 		type: 'pkcs8',
 		format: 'pem',
 		cipher: 'aes-256-cbc',
-		passphrase: 'Fh<~p;]}r^&\3}&69^Hr'
+		passphrase: config.passphrase
 	  }
 	}, (err, publicKey, privateKey) => {
 	  // Handle errors and use the generated key pair.
 	  console.log(publicKey);
-	  fs.writeFile('publickey.txt', publicKey, function (err) {
+	  fs.writeFile(config.publicKey, publicKey, function (err) {
 		if (err) throw err;
 		console.log('Saved public key!');
 	  });
 	  
 	  console.log(privateKey);
-	  fs.writeFile('privatekey.txt', privateKey, function (err) {
+	  fs.writeFile(config.privateKey, privateKey, function (err) {
 		if (err) throw err;
 		console.log('Saved private key!');
 	  });
 	  
 	});
+	
+	res.write(' ------> key generation finished');
+	res.end();
 	
 });
 
@@ -75,6 +104,8 @@ app.listen(3000, function () {
   //get data from config.json
   console.log('\nconfig setup:');
   config = JSON.parse(fs.readFileSync('config.json'));
+  //get passphrase first in the programm
+  config.passphrase = fs.readFileSync(config.passphrase, "utf8").trim();
   console.log(config);
 });
 
