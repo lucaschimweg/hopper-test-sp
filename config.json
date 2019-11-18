@@ -1,0 +1,5 @@
+{
+	"baseUrl": "dev.hoppercloud.net",
+	"keys": "localFiles/",
+	"passphrase": "localFiles/"
+}
