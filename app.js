@@ -5,6 +5,7 @@ const https = require('https');
 const path = require("path");
 const request = require("request");
 const crypto = require("crypto");
+const url = require('url');
 
 let config;
 
@@ -72,6 +73,51 @@ app.get('/update', function (req, res) {
 	});
 	
 	res.write(' ------> update finished');
+	res.end(); 
+	
+});
+
+app.get('/subscripe', function (req, res) {
+	res.writeHead(200, {'Content-Type': 'text/html'});
+	res.write('create subscripe request is in process');
+	
+	console.log('\nsubscripe:');
+	
+	var subscribeRequest = {id:config.id,callback:'http://localhost:3000/callback?name=mustermann', name:'mustermann',requestedInfos:[]};
+	var passphrase = fs.readFileSync(config.passphrase, "utf8").trim();
+	var privateKey = fs.readFileSync(config.privateKey, "utf8");
+	var toEncrypt = Buffer.from(JSON.stringify(subscribeRequest));
+	var encrypted = crypto.privateEncrypt(
+		{
+			key : privateKey,
+			passphrase: passphrase
+		},
+		toEncrypt);
+	
+	/*subscripe?id={{spId}}&request={{base64-request}}*/
+	console.log('id: ' + config.id);
+	console.log('request: ' + encrypted.toString('base64'));
+	request.get('https://' + config.baseUrl + '/api/v1/subscripe?id={{' + config.id + '}}&request={{' + encrypted.toString('base64') + '}}', (error, res, body) => {
+		if (error) {
+			console.error(error)
+			return
+		}
+		console.log(`statusCode: ${res.statusCode}`)
+		console.log(body)
+	});
+	
+	res.write(' ------> subscribe request finished');
+	res.end(); 
+	
+});
+
+app.get('/callback', function (req, res) {
+	res.writeHead(200, {'Content-Type': 'text/html'});
+	var q = url.parse(req.url, true);
+	res.write('received callback for ' + q.query.name);
+	
+	console.log('\ncallback received');
+	
 	res.end(); 
 	
 });
