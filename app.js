@@ -51,7 +51,6 @@ app.get('/update', function (req, res) {
 	var passphrase = fs.readFileSync(config.passphrase, "utf8").trim();
 	var privateKey = fs.readFileSync(config.privateKey, "utf8");
 	var toEncrypt = Buffer.from(JSON.stringify(config.details));
-	console.log(toEncrypt.length);
 	var encrypted = crypto.privateEncrypt(
 		{
 			key : privateKey,
@@ -59,13 +58,15 @@ app.get('/update', function (req, res) {
 		},
 		toEncrypt);
 	
-	console.log(encrypted);
+	console.log('Bytes of update string: ' + toEncrypt.length);
+	console.log(toEncrypt.toString('utf8'));
+	console.log(encrypted.toString('base64'));
 	
 	var publicKey = fs.readFileSync(config.publicKey, "utf8");
 	var todecrypt = Buffer.from(encrypted, "base64");
-	var decrypted = crypto.publicDecrypt(publicKey, buffer);
+	var decrypted = crypto.publicDecrypt(publicKey, todecrypt);
 	
-	console.log(decrypted);
+	console.log(decrypted.toString('utf8'));
 	
 	/*
 	request.post('https://' + config.baseUrl + '/api/v1/app', config.details, (error, res, body) => {
