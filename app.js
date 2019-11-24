@@ -59,31 +59,18 @@ app.get('/update', function (req, res) {
 		toEncrypt);
 	
 	console.log('Bytes of update string: ' + toEncrypt.length);
-	console.log(toEncrypt.toString('utf8'));
-	console.log(encrypted.toString('base64'));
+	console.log({id:config.id, data:encrypted.toString('base64')});
 	
-	var publicKey = fs.readFileSync(config.publicKey, "utf8");
-	var todecrypt = Buffer.from(encrypted, "base64");
-	var decrypted = crypto.publicDecrypt(publicKey, todecrypt);
 	
-	console.log(decrypted.toString('utf8'));
-	
-	/*
-	request.post('https://' + config.baseUrl + '/api/v1/app', config.details, (error, res, body) => {
+	request.put('https://' + config.baseUrl + '/api/v1/app', {id:config.id, data:encrypted.toString('base64')}, (error, res, body) => {
 		if (error) {
 			console.error(error)
 			return
 		}
 		console.log(`statusCode: ${res.statusCode}`)
 		console.log(body)
-		if (body.status === 'success'){
-			config.id = body.id;
-			console.log(config);
-			fs.writeFileSync('config.json', JSON.stringify(config));
-			console.log('update config file');
-		}
 	});
-	*/
+	
 	res.write(' ------> update finished');
 	res.end(); 
 	
@@ -144,31 +131,4 @@ app.listen(3000, function () {
   console.log('\nconfig setup:');
   config = JSON.parse(fs.readFileSync('config.json'));
   console.log(config);
-});
-
-app.get('/crypt', function (req, res) {
-	
-	// passphrase should be hard to guess -> later not writing it plain
-	
-	res.writeHead(200, {'Content-Type': 'text/html'});
-	res.write('encrypt and decrypt is in process -> ');
-	//res.write(req.url);
-	
-	var absolutePath = path.resolve('publickey.txt');
-    var publicKey = fs.readFileSync(absolutePath, "utf8");
-    var buffer = Buffer.from(req.url);
-    var encrypted = crypto.publicEncrypt(publicKey, buffer);
-	
-	var absolutePath = path.resolve('privatekey.txt');
-    var privateKey = fs.readFileSync(absolutePath, "utf8");
-    var buffer = Buffer.from(encrypted, "base64");
-    var decrypted = crypto.privateDecrypt(
-		{
-			key : privateKey,
-			passphrase: 'Fh<~p;]}r^&\3}&69^Hr'
-		},
-		buffer);
-	res.write(decrypted + " = " + req.url);
-	res.end(); 
-	console.log('crypt');
 });
