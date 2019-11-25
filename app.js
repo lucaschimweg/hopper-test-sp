@@ -95,7 +95,7 @@ app.get('/subscribe', function (req, res) {
 	console.log('id: ' + config.id);
 	console.log('request: ' + encrypted.toString('base64'));
 
-    res.redirect('https://' + config.baseUrl + '/subscribe?id=' + encodeURIComponent(config.id) + '&request=' + encodeURIComponent(encrypted.toString('base64')));
+    res.redirect('https://' + config.baseUrl + '/subscribe?id=' + encodeURIComponent(config.id) + '&data=' + encodeURIComponent(encrypted.toString('base64')));
 
 	res.end();
 
