@@ -64,7 +64,8 @@ app.post('/newsp', (req,res)=>{
         //wrong password
         res.redirect('/')
     }else{
-        obj = Object.create(req.body);
+        console.log(req.body);
+        obj = Object.assign({}, req.body);
         createNewSP(obj);
         res.render('overview', {username: req.body.username, 
             serviceProvider: data.user[req.body.index].serviceProvider, 
@@ -317,6 +318,7 @@ let validPassword = (username, password, index) => {
 
 let createNewSP = (obj) => {
     serviceProvider = {};
+    console.log(obj);
     data.user[obj.index].serviceProvider.push(serviceProvider);
     //generate rsa key
     var passphrase = config.passphrase;
