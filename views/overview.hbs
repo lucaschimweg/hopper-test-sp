@@ -12,8 +12,8 @@
                 <tr>
                     <th>Name</th>
                     <th>Base URL</th>
-                    <th>Logo URL</th>
                     <th>Image URL</th>
+                    <th>Manage URL</th>
                     <th>Contact Email</th>
                     <th></th>
                 </tr>
@@ -21,8 +21,8 @@
                     <tr>
                         <td>{{this.name}}</td>
                         <td>{{this.baseUrl}}</td>
-                        <td>{{this.logoUrl}}</td>
                         <td>{{this.imageUrl}}</td>
+                        <td>{{this.manageUrl}}</td>
                         <td>{{this.contactEmail}}</td>
                         <td><a href='/serviceprovider?id={{this.id}}&&index={{../index}}'>change</a></td>
                     </tr>
@@ -35,17 +35,17 @@
                 <input type="text" name="username" value={{username}} readonly>
                 <input type="text" name="index" value={{index}} readonly><br>
                 Name:<br>
-                <input type="text" name="name" value=""><br>
+                <input type="text" name="name" value="" required><br>
                 Base URL:<br>
-                <input type="text" name="baseUrl" value=""><br>
-                Logo URL:<br>
-                <input type="text" name="logoUrl" value=""><br>
+                <input type="text" name="baseUrl" value="" required><br>
                 Image URL:<br>
-                <input type="text" name="imageUrl" value=""><br>
+                <input type="text" name="imageUrl" value="" required><br>
+                Manage URL:<br>
+                <input type="text" name="manageUrl" value=""><br>
                 Contact Email:<br>
-                <input type="text" name="contactEmail" value=""><br><br>
+                <input type="text" name="contactEmail" value="" required><br><br>
                  Password:<br>
-                <input type="password" name="password" value=""><br><br>
+                <input type="password" name="password" value="" required><br><br>
                 <input type="submit" value="Create">
             </fieldset>
         </form>
@@ -78,13 +78,13 @@
                     <input type="text" name="accountName" value=""><br>
                     App:<br>
                     <select name="appId">
-                        <option value="none" disabled>None</option>
+                        <option value="none" disabled selected="selected">None</option>
                         {{#each serviceProvider}}
                             <option value={{this.id}}>{{this.name}}</option>
                         {{/each}}
                     </select><br><br>
                     Password:<br>
-                    <input type="password" name="password" value=""><br><br>
+                    <input type="password" name="password" value="" required><br><br>
                     <input type="submit" value="Create">
                 </fieldset>
             </form>

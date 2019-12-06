@@ -16,7 +16,7 @@ let config;
 //view engine setup
 app.set('views', path.join(__dirname, "views"));
 app.set('view engine', 'hbs');
-app.use(express.urlencoded({extended: true}))
+app.use(express.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname, '/views')));
 
 app.get('/', (req,res)=>{
@@ -64,10 +64,11 @@ app.post('/newsp', (req,res)=>{
         //wrong password
         res.redirect('/')
     }else{
+        obj = Object.create(req.body);
+        createNewSP(obj);
         res.render('overview', {username: req.body.username, 
             serviceProvider: data.user[req.body.index].serviceProvider, 
             addresser: data.user[req.body.index].addresser, index: req.body.index, notifications: data.user[req.body.index].notifications});
-        createNewSP(req.body);
     }
 })
 
@@ -84,7 +85,10 @@ app.get('/callback', (req,res)=>{
     var q = url.parse(req.url, true).query;
     console.log(q);
     a = {"id":q.aid};
+    console.log(a);
+    console.log(data.user[q.index].addresser);
     aindex = contains(data.user[q.index].addresser, a, 'id');
+    
     if(aindex == -1){
         //invalid request
         res.redirect('/')
@@ -140,7 +144,6 @@ app.post('/send', (req,res)=>{
         data.user[req.body.index].notifications.push(notification);
         notification.id = req.body.id;
         notification.heading = req.body.heading;
-        notification.subscription = req.body.appName;
         notification.timestamp = timestamp;
         notification.imageUrl = req.body.imageUrl;
         if(req.body.isDone == 'checked'){
@@ -247,6 +250,7 @@ app.post('/update', (req,res)=>{
             var content = {"verify":encrypted.toString('base64'), "data": obj};
             console.log(content);
             request.put('https://' + config.baseUrl + '/api/v1/app', {json: {id:id, content:Buffer.from(JSON.stringify(content)).toString('base64')}}, (error, res, body) => {
+
                 if (error) {
                     console.error(error)
                     return
@@ -292,8 +296,10 @@ let updateData = () =>{
 let contains = (list, obj, att) => {
     var i = 0;
     for(i = 0; i < list.length; i++){
-        if (list[i][att] === obj[att]){
-            return i;
+        if(list[i] != null){
+            if (list[i][att] === obj[att]){
+                return i;
+            }
         }
     }
     return -1;
@@ -401,14 +407,14 @@ generatePassphrase = () =>{
 }
 
 defaultConfig = () => {
-    var passphrase = generatePassphrase();
+    var passphrase = "0adf5AD11A23adfAD524f8DFA9495sa7AD3DF6543";
     var lconfig = {"baseUrl": "dev.hoppercloud.net", "host": "http://localhost", "data": "localfiles/data.json", "port": 5000, "passphrase": passphrase};
     return lconfig;
 }
 
 //check for config
 try {
-    if(!process.argv[2]){
+    if(!process.argv[2]){ 
         console.log("Specify config!"); 
         process.exit(1);
     }
@@ -419,6 +425,7 @@ try {
         fs.writeFileSync(configpath, JSON.stringify(defaultConfig()));
         console.log("Could not read config! Default config written to disk!");
         process.exit(1);
+
     }
 
     config = JSON.parse(fs.readFileSync(configpath));
