@@ -15,6 +15,7 @@ const rl = readline.createInterface({
 //get data -> later database?
 let data;
 let rootpath = './localfiles/';
+let configpath;
 
 //view engine setup
 app.set('views', path.join(__dirname, "views"));
@@ -159,7 +160,7 @@ app.post('/send', (req,res)=>{
         notification.type = req.body.type;
         notification.content = req.body.content;
         notification.actions = [];
-        config = JSON.parse(fs.readFileSync(rootpath + 'config.json'));
+        config = JSON.parse(fs.readFileSync(configpath));
         request.post('https://' + config.baseUrl + '/api/v1/notification', {json:{subscriptionId:req.body.subscriptionId,notification:notification}}, (error, res, body) => {
             if (error) {
                 console.error(error)
@@ -250,7 +251,7 @@ app.post('/update', (req,res)=>{
                 toEncrypt);
             var content = {"verify":encrypted.toString('base64'), "data": obj};
             console.log(content);
-            config = JSON.parse(fs.readFileSync(rootpath + 'config.json'));
+            config = JSON.parse(fs.readFileSync(configpath));
             request.put('https://' + config.baseUrl + '/api/v1/app', {id:id, data:Buffer.from(JSON.stringify(content)).toString('base64')}, (error, res, body) => {
                 if (error) {
                     console.error(error)
@@ -337,7 +338,7 @@ let createNewSP = (obj) => {
     serviceProvider.privateKey = privateKey;
 
     //register sp
-    config = JSON.parse(fs.readFileSync(rootpath + 'config.json'));
+    config = JSON.parse(fs.readFileSync(configpath));
     certificate = Buffer.from(serviceProvider.publicKey).toString('base64');
     delete obj.username;
     delete obj.password;
@@ -366,7 +367,7 @@ createNewAD = (obj, res) => {
     delete obj.index;
     Object.assign(addresser, obj);
     updateData();
-    config = JSON.parse(fs.readFileSync(rootpath + 'config.json'));
+    config = JSON.parse(fs.readFileSync(configpath));
     var subscribeRequest = {id:obj.appId,callback: config.host + '/callback?index=' + index + '&aid=' + addresser.id, name: obj.accountName, requestedInfos:[]};
     var passphrase = fs.readFileSync(rootpath + 'passphrase.txt');
     c = {"id":obj.appId};
@@ -402,55 +403,29 @@ generateId = () => {
     return hash.digest('hex');
 }
 
-const question1 = () => {
-    return new Promise((resolve, reject) => {
-        rl.question('Please provide secure passphrase: ', (answer) => {
-            console.log('passphrase: ' + answer + ' is saved');
-            fs.writeFileSync(rootpath + 'passphrase.txt', answer);
-            resolve();
-        })
-    })
+generatePassphrase = () =>{
+    var rand = crypto.randomBytes(128).toString('base64');
+    return rand;
 }
-
-const question2 = () => {
-    return new Promise((resolve, reject) => {
-        rl.question('Please provide base Url for API requests: ', (answer) => {
-            console.log('base URL: ' + answer + ' is saved');
-                fs.writeFileSync(rootpath + 'config.json', '{"baseUrl": "' + answer + '"}');
-            resolve();
-        })
-    })
-}
-
-const question3 = () => {
-    return new Promise((resolve, reject) => {
-        rl.question('Please provide address of this service provider instance: ', (answer) => {
-            console.log('address: ' + answer + ' is saved');
-            config = JSON.parse(fs.readFileSync(rootpath + 'config.json'));
-            config.host = answer;
-            fs.writeFileSync(rootpath + 'config.json', JSON.stringify(config));
-            resolve();
-        })
-    })
-}
-
-const questions = async () => {
-    await question1();
-    await question2();
-    await question3();
-    rl.close()
-  }
 
 app.listen(5000, ()=>{
     console.log('Service Provider is running > PORT 5000');
     //check if data file is init
     try {
+        if(!process.argv[2]){
+            console.log("Starting with local config");
+            configpath = rootpath + 'config.json';
+        }else{
+            console.log("Loading config from " + process.argv[2]);
+            configpath = process.argv[2];
+        }
         if (!fs.existsSync(rootpath)) {
             //init
             console.log('init service provider');
             fs.mkdirSync(rootpath)
             fs.writeFileSync(rootpath + 'data.json', '{"user":[]}');
-            questions();
+            fs.writeFileSync(rootpath + 'passphrase.txt', generatePassphrase());
+            fs.writeFileSync(rootpath + 'config.json', '{"baseUrl": "dev.hoppercloud.net", "host": "http://localhost:5000"}');
         }
         data = JSON.parse(fs.readFileSync(rootpath + 'data.json'));
       } catch(err) {
