@@ -3,14 +3,9 @@ const app = express();
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const readline = require('readline');
 const request = require('request');
 const url = require('url');
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
 
 //get data -> later database?
 let data;
@@ -251,7 +246,7 @@ app.post('/update', (req,res)=>{
                 toEncrypt);
             var content = {"verify":encrypted.toString('base64'), "data": obj};
             console.log(content);
-            request.put('https://' + config.baseUrl + '/api/v1/app', {id:id, data:Buffer.from(JSON.stringify(content)).toString('base64')}, (error, res, body) => {
+            request.put('https://' + config.baseUrl + '/api/v1/app', {json: {id:id, content:Buffer.from(JSON.stringify(content)).toString('base64')}}, (error, res, body) => {
                 if (error) {
                     console.error(error)
                     return
@@ -414,15 +409,19 @@ defaultConfig = () => {
 //check for config
 try {
     if(!process.argv[2]){
-        console.log("Starting with local config");
-        //create default config
-        config = defaultConfig();
-    }else{
-        console.log("Loading config from " + process.argv[2]);
-        configpath = process.argv[2];
-        config = JSON.parse(fs.readFileSync(rootpath + 'data.json'));
+        console.log("Specify config!"); 
+        process.exit(1);
     }
-    //load path for data and check if empty
+    configpath = process.argv[2];
+    console.log("Loading config from " + configpath);
+    
+    if (!fs.existsSync(configpath)) {
+        fs.writeFileSync(configpath, JSON.stringify(defaultConfig()));
+        console.log("Could not read config! Default config written to disk!");
+        process.exit(1);
+    }
+
+    config = JSON.parse(fs.readFileSync(configpath));
     datapath = config.data;
     if (!fs.existsSync(datapath)) {
         data = {"user":[]};
@@ -434,7 +433,7 @@ try {
     }
     //start server
     app.listen(config.port, ()=>{
-        console.log('Service Provider is running > PORT 5000');
+        console.log(`Service Provider is running on port ${config.port}!`);
     });
 } catch(err) {
     console.error(err)
