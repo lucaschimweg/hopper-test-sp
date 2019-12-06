@@ -14,8 +14,9 @@ const rl = readline.createInterface({
 
 //get data -> later database?
 let data;
-let rootpath = './localfiles/';
+let datapath;
 let configpath;
+let config;
 
 //view engine setup
 app.set('views', path.join(__dirname, "views"));
@@ -160,7 +161,6 @@ app.post('/send', (req,res)=>{
         notification.type = req.body.type;
         notification.content = req.body.content;
         notification.actions = [];
-        config = JSON.parse(fs.readFileSync(configpath));
         request.post('https://' + config.baseUrl + '/api/v1/notification', {json:{subscriptionId:req.body.subscriptionId,notification:notification}}, (error, res, body) => {
             if (error) {
                 console.error(error)
@@ -211,7 +211,7 @@ app.post('/update', (req,res)=>{
             update.name = req.body.name;
             if(req.body.newCert == 'checked'){
                 //generate new keypair
-                var passphrase = fs.readFileSync(rootpath + 'passphrase.txt');
+                var passphrase = config.passphrase;
                 const { generateKeyPairSync } = crypto;
                 const { publicKey, privateKey } = generateKeyPairSync('rsa', {
                     modulusLength: 2048,
@@ -241,7 +241,7 @@ app.post('/update', (req,res)=>{
             var sha = crypto.createHash('sha256');
             sha.update(JSON.stringify(obj));
             var hash = sha.digest('hex');
-            var passphrase = fs.readFileSync(rootpath + 'passphrase.txt');
+            var passphrase = config.passphrase;
 	        var toEncrypt = Buffer.from(hash);
 	        var encrypted = crypto.privateEncrypt(
 		        {
@@ -251,7 +251,6 @@ app.post('/update', (req,res)=>{
                 toEncrypt);
             var content = {"verify":encrypted.toString('base64'), "data": obj};
             console.log(content);
-            config = JSON.parse(fs.readFileSync(configpath));
             request.put('https://' + config.baseUrl + '/api/v1/app', {id:id, data:Buffer.from(JSON.stringify(content)).toString('base64')}, (error, res, body) => {
                 if (error) {
                     console.error(error)
@@ -289,7 +288,7 @@ let hashPassword = (password) => {
 }
 
 let updateData = () =>{
-    fs.writeFile(rootpath + 'data.json', JSON.stringify(data), (err) =>{
+    fs.writeFile(datapath, JSON.stringify(data), (err) =>{
         if (err) throw err;
         console.log('data saved');
     });
@@ -319,7 +318,7 @@ let createNewSP = (obj) => {
     serviceProvider = {};
     data.user[obj.index].serviceProvider.push(serviceProvider);
     //generate rsa key
-    var passphrase = fs.readFileSync(rootpath + 'passphrase.txt');
+    var passphrase = config.passphrase;
     const { generateKeyPairSync } = crypto;
     const { publicKey, privateKey } = generateKeyPairSync('rsa', {
         modulusLength: 2048,
@@ -338,7 +337,6 @@ let createNewSP = (obj) => {
     serviceProvider.privateKey = privateKey;
 
     //register sp
-    config = JSON.parse(fs.readFileSync(configpath));
     certificate = Buffer.from(serviceProvider.publicKey).toString('base64');
     delete obj.username;
     delete obj.password;
@@ -367,9 +365,8 @@ createNewAD = (obj, res) => {
     delete obj.index;
     Object.assign(addresser, obj);
     updateData();
-    config = JSON.parse(fs.readFileSync(configpath));
-    var subscribeRequest = {id:obj.appId,callback: config.host + '/callback?index=' + index + '&aid=' + addresser.id, name: obj.accountName, requestedInfos:[]};
-    var passphrase = fs.readFileSync(rootpath + 'passphrase.txt');
+    var subscribeRequest = {id:obj.appId,callback: config.host + ':' + config.port + '/callback?index=' + index + '&aid=' + addresser.id, name: obj.accountName, requestedInfos:[]};
+    var passphrase = config.passphrase;
     c = {"id":obj.appId};
     spindex = contains(data.user[index].serviceProvider, c, 'id');
     if(spindex==-1){
@@ -408,27 +405,37 @@ generatePassphrase = () =>{
     return rand;
 }
 
-app.listen(5000, ()=>{
-    console.log('Service Provider is running > PORT 5000');
-    //check if data file is init
-    try {
-        if(!process.argv[2]){
-            console.log("Starting with local config");
-            configpath = rootpath + 'config.json';
-        }else{
-            console.log("Loading config from " + process.argv[2]);
-            configpath = process.argv[2];
+defaultConfig = () => {
+    var passphrase = generatePassphrase();
+    var lconfig = {"baseUrl": "dev.hoppercloud.net", "host": "http://localhost", "data": "localfiles/data.json", "port": 5000, "passphrase": passphrase};
+    return lconfig;
+}
+
+//check for config
+try {
+    if(!process.argv[2]){
+        console.log("Starting with local config");
+        //create default config
+        config = defaultConfig();
+    }else{
+        console.log("Loading config from " + process.argv[2]);
+        configpath = process.argv[2];
+        config = JSON.parse(fs.readFileSync(rootpath + 'data.json'));
+    }
+    //load path for data and check if empty
+    datapath = config.data;
+    if (!fs.existsSync(datapath)) {
+        data = {"user":[]};
+    }else{
+        data = JSON.parse(fs.readFileSync(datapath));
+        if(data == {}){
+            data = {"user":[]};
         }
-        if (!fs.existsSync(rootpath)) {
-            //init
-            console.log('init service provider');
-            fs.mkdirSync(rootpath)
-            fs.writeFileSync(rootpath + 'data.json', '{"user":[]}');
-            fs.writeFileSync(rootpath + 'passphrase.txt', generatePassphrase());
-            fs.writeFileSync(rootpath + 'config.json', '{"baseUrl": "dev.hoppercloud.net", "host": "http://localhost:5000"}');
-        }
-        data = JSON.parse(fs.readFileSync(rootpath + 'data.json'));
-      } catch(err) {
-        console.error(err)
-      }
-});
+    }
+    //start server
+    app.listen(config.port, ()=>{
+        console.log('Service Provider is running > PORT 5000');
+    });
+} catch(err) {
+    console.error(err)
+}
