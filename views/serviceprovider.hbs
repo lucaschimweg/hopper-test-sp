@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <h1>Your Workspace [#{{index}}]</h1>
+        <form method="post" action="update">
+            <fieldset>
+                <legend>Update Service Provider</legend>
+                User:<br>
+                <input type="text" name="username" value={{username}} readonly>
+                <input type="text" name="index" value={{index}} readonly><br>
+                Name:<br>
+                <input type="text" name="name" value={{name}}>
+                <input type="text" name="id" value={{id}} readonly><br>
+                Image URL:<br>
+                <input type="text" name="imageUrl" value={{imageUrl}}><br>
+                New Cert:<br>
+                <input type="checkbox" name="newCert" value="checked"><br><br>
+                 Password:<br>
+                <input type="password" name="password" value=""><br><br>
+                <input type="submit" value="Create">
+            </fieldset>
+        </form>
+    </body>
+</html>

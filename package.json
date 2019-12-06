@@ -1,16 +1,25 @@
 {
-  "name": "serviceprovider",
+  "name": "serviceproviderserver",
   "version": "1.0.0",
-  "description": "mockup ServiceProvider",
-  "main": "app.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/konradhartwig/ServiceProviderServer.git"
+  },
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/konradhartwig/ServiceProviderServer/issues"
+  },
+  "homepage": "https://github.com/konradhartwig/ServiceProviderServer#readme",
   "dependencies": {
-    "crypto": "^1.0.1",
     "express": "^4.17.1",
-    "request": "^2.88.0"
+    "hbs": "^4.0.6",
+    "request": "^2.88.0",
+    "save": "^2.4.0"
   }
 }

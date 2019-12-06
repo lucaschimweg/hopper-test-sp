@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <h1>Your Workspace [#{{index}}]</h1>
+        <form method="post" action="send">
+            <fieldset>
+                <legend>Send Notification</legend>
+                User:<br>
+                <input type="text" name="username" value={{username}} readonly>
+                <input type="text" name="index" value={{index}} readonly><br>
+                Account Name:<br>
+                <input type="text" name="accountName" value={{accountName}} readonly>
+                <input type="text" name="subscriptionId" value={{subId}} readonly><br>
+                App:<br>
+                <input type="text" name="appName" value={{appName}} readonly>
+                <input type="text" name="appId" value={{appId}} readonly><br>
+                ID:<br>
+                <input type="text" name="id" value={{id}} readonly><br>
+                Heading:<br>
+                <input type="text" name="heading" value=""><br>
+                Subscription:<br>
+                <input type="text" name="subscription" value=""><br>
+                Image URL:<br>
+                <input type="text" name="imageUrl" value=""><br>
+                Is Done:<br>
+                <input type="checkbox" name="isDone" value="checked"><br>
+                Is Silent:<br>
+                <input type="checkbox" name="isSilent" value="checked"><br>
+                Type:<br>
+                <input type="text" name="type" value="default"><br>
+                content:<br>
+                <input type="text" name="content" value="default"><br>
+                action:<br>
+                <input type="text" name="actions" value="not available yet" readonly><br><br>
+                 Password:<br>
+                <input type="password" name="password" value=""><br><br>
+                <input type="submit" value="Create">
+            </fieldset>
+        </form>
+    </body>
+</html>
