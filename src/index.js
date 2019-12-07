@@ -381,7 +381,8 @@ let createNewSP = (obj) => {
     Object.assign(serviceProvider, obj, {cert:certificate});
     request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res, body) => {
 		if (error) {
-			console.error(error)
+            console.error(error)
+            serviceProvider.id = error;
 			return
 		}
 		console.log(`statusCode: ${res.statusCode}`)
@@ -389,6 +390,8 @@ let createNewSP = (obj) => {
 		if (body.status === 'success'){
             serviceProvider.id = body.id;
             updateData();
+        }else{
+            serviceProvider.id = body.status;
         }
 	});
 }
