@@ -408,7 +408,7 @@ createNewAD = (obj, res) => {
     } else{
         var callback = config.host + ':' + config.port + '/callback?index=' + index + '&aid=' + addresser.id;
     }
-    var subscribeRequest = {id:obj.appId,callback: callback, name: obj.accountName, requestedInfos:[]};
+    var subscribeRequest = {id:obj.appId,callback: callback, accountName: obj.accountName, requestedInfos:[]};
     var passphrase = config.passphrase;
     c = {"id":obj.appId};
     spindex = contains(data.user[index].serviceProvider, c, 'id');
