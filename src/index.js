@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const request = require('request');
 const url = require('url');
+const Handlebars = require('hbs');
 
 
 //get data -> later database?
@@ -18,6 +19,10 @@ app.set('views', path.join(__dirname, "views"));
 app.set('view engine', 'hbs');
 app.use(express.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname, '/views')));
+
+Handlebars.registerHelper('ifEquals', function(arg1, arg2, options) {
+    return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
+});
 
 app.get('/', (req,res)=>{
     res.render('index');
@@ -104,7 +109,7 @@ app.get('/callback', (req,res)=>{
         }else{
             console.log(q.error);
             console.log('delete user: ' + data.user[q.index].addresser[aindex].accountName)
-            delete data.user[q.index].addresser[aindex];
+            data.user[q.index].addresser.splice(aindex, 1);
             res.redirect('/')
         }
     }
@@ -134,7 +139,6 @@ app.get('/notification', (req,res)=>{
 })
 
 app.post('/send', (req,res)=>{
-    console.log(req.body);
     if(!validPassword(req.body.username, req.body.password, req.body.index)){
         //wrong password
         res.redirect('/')
@@ -146,7 +150,9 @@ app.post('/send', (req,res)=>{
         notification.id = req.body.id;
         notification.heading = req.body.heading;
         notification.timestamp = timestamp;
-        notification.imageUrl = req.body.imageUrl;
+        if(req.body.imageUrl != ""){
+            notification.imageUrl = req.body.imageUrl;
+        }
         if(req.body.isDone == 'checked'){
             notification.isDone = true;
         } else{
@@ -160,21 +166,24 @@ app.post('/send', (req,res)=>{
         notification.type = req.body.type;
         notification.content = req.body.content;
         notification.actions = [];
-        request.post('https://' + config.baseUrl + '/api/v1/notification', {json:{subscriptionId:req.body.subscriptionId,notification:notification}}, (error, res, body) => {
+        obj = Object.assign({}, notification);
+        notification.appId = req.body.appId;
+        notification.appName = req.body.appName;
+        request.post('https://' + config.baseUrl + '/api/v1/notification', {json:{subscriptionId:req.body.subscriptionId,notification:obj}}, (error, res2, body) => {
             if (error) {
                 console.error(error)
                 return
             }
-            console.log(`statusCode: ${res.statusCode}`);
+            console.log(`statusCode: ${res2.statusCode}`);
             console.log(body);
             if (body.status === 'success'){
                 notification.systemId = body.id;
                 updateData();
             }
+            res.render('overview', 
+            {username: req.body.username, serviceProvider: data.user[req.body.index].serviceProvider, 
+                addresser: data.user[req.body.index].addresser, index: req.body.index, notifications: data.user[req.body.index].notifications});
         });
-        res.render('overview', 
-        {username: req.body.username, serviceProvider: data.user[req.body.index].serviceProvider, 
-            addresser: data.user[req.body.index].addresser, index: req.body.index, notifications: data.user[req.body.index].notifications});
     }
 })
 
@@ -250,15 +259,32 @@ app.post('/update', (req,res)=>{
                 toEncrypt);
             var content = {"verify":encrypted.toString('base64'), "data": obj};
             console.log(content);
-            request.put('https://' + config.baseUrl + '/api/v1/app', {json: {id:id, content:Buffer.from(JSON.stringify(content)).toString('base64')}}, (error, res, body) => {
+            request.put('https://' + config.baseUrl + '/api/v1/app', {json: {id:id, content:Buffer.from(JSON.stringify(content)).toString('base64')}}, (error, res2, body) => {
 
                 if (error) {
                     console.error(error)
                     return
                 }
-                console.log(`statusCode: ${res.statusCode}`);
+                console.log(`statusCode: ${res2.statusCode}`);
                 console.log(body);
                 if (body.status === 'success'){
+                    if(data.user[req.body.index].serviceProvider[spindex].name != update.name){
+                        //update name in notifications and addressers
+                        for(var i = 0; i < data.user[req.body.index].addresser.length; i++){
+                            if(data.user[req.body.index].addresser[i] != null){
+                                if(data.user[req.body.index].addresser[i].appId == id){
+                                    data.user[req.body.index].addresser[i].appName = update.name;
+                                }
+                            }
+                        }
+                        for(var i = 0; i < data.user[req.body.index].notifications.length; i++){
+                            if(data.user[req.body.index].notifications[i] != null){
+                                if(data.user[req.body.index].notifications[i].appId == id){
+                                    data.user[req.body.index].notifications[i].appName = update.name;
+                                }
+                            }
+                        }
+                    }
                     data.user[req.body.index].serviceProvider[spindex].name = update.name;
                     data.user[req.body.index].serviceProvider[spindex].imageUrl = update.imageUrl;
                     data.user[req.body.index].serviceProvider[spindex].cert = update.cert;
@@ -270,10 +296,10 @@ app.post('/update', (req,res)=>{
                     }
                     updateData();
                 }
-            });
-            res.render('overview', 
-            {username: req.body.username, serviceProvider: data.user[req.body.index].serviceProvider, 
+                res.render('overview', 
+                {username: req.body.username, serviceProvider: data.user[req.body.index].serviceProvider, 
                 addresser: data.user[req.body.index].addresser, index: req.body.index, notifications: data.user[req.body.index].notifications});
+            });
         }
     }
 })
@@ -344,6 +370,14 @@ let createNewSP = (obj) => {
     delete obj.username;
     delete obj.password;
     delete obj.index;
+    var base = config.host;
+    //cut away http// or https://
+    if(base.slice(0, 7) == 'http://'){
+        base = base.slice(7);
+    } else if(base.slice(0, 8) == 'https://'){
+        base = base.slice(8);
+    }
+    obj.baseUrl = base;
     Object.assign(serviceProvider, obj, {cert:certificate});
     request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res, body) => {
 		if (error) {
