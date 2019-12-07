@@ -69,12 +69,7 @@ app.post('/newsp', (req,res)=>{
         //wrong password
         res.redirect('/')
     }else{
-        var username = req.body.username;
-        var index = req.body.index;
-        createNewSP(req.body);
-        res.render('overview', {username: username, 
-            serviceProvider: data.user[index].serviceProvider, 
-            addresser: data.user[index].addresser, index: index, notifications: data.user[index].notifications});
+        createNewSP(req.body, res);
     }
 })
 
@@ -342,7 +337,7 @@ let validPassword = (username, password, index) => {
     }
 }
 
-let createNewSP = (obj) => {
+let createNewSP = (obj, res) => {
     serviceProvider = {};
     console.log(obj);
     data.user[obj.index].serviceProvider.push(serviceProvider);
@@ -367,6 +362,8 @@ let createNewSP = (obj) => {
 
     //register sp
     certificate = Buffer.from(serviceProvider.publicKey).toString('base64');
+    var username = obj.username;
+    var index = obj.index;
     delete obj.username;
     delete obj.password;
     delete obj.index;
@@ -379,17 +376,20 @@ let createNewSP = (obj) => {
     }
     obj.baseUrl = base;
     Object.assign(serviceProvider, obj, {cert:certificate});
-    request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res, body) => {
+    request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res2, body) => {
 		if (error) {
             console.error(error)
 			return
 		}
-		console.log(`statusCode: ${res.statusCode}`)
+		console.log(`statusCode: ${res2.statusCode}`)
 		console.log(body)
 		if (body.status === 'success'){
             serviceProvider.id = body.id;
             updateData();
         }
+        res.render('overview', {username: username, 
+            serviceProvider: data.user[index].serviceProvider, 
+            addresser: data.user[index].addresser, index: index, notifications: data.user[index].notifications});
 	});
 }
 
