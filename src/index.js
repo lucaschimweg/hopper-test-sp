@@ -69,12 +69,12 @@ app.post('/newsp', (req,res)=>{
         //wrong password
         res.redirect('/')
     }else{
-        console.log(req.body);
-        obj = Object.assign({}, req.body);
-        createNewSP(obj);
-        res.render('overview', {username: req.body.username, 
-            serviceProvider: data.user[req.body.index].serviceProvider, 
-            addresser: data.user[req.body.index].addresser, index: req.body.index, notifications: data.user[req.body.index].notifications});
+        var username = req.body.username;
+        var index = req.body.index;
+        createNewSP(req.body);
+        res.render('overview', {username: username, 
+            serviceProvider: data.user[index].serviceProvider, 
+            addresser: data.user[index].addresser, index: index, notifications: data.user[index].notifications});
     }
 })
 
@@ -382,7 +382,6 @@ let createNewSP = (obj) => {
     request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res, body) => {
 		if (error) {
             console.error(error)
-            serviceProvider.id = error;
 			return
 		}
 		console.log(`statusCode: ${res.statusCode}`)
@@ -390,8 +389,6 @@ let createNewSP = (obj) => {
 		if (body.status === 'success'){
             serviceProvider.id = body.id;
             updateData();
-        }else{
-            serviceProvider.id = body.status;
         }
 	});
 }
