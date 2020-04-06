@@ -7,7 +7,6 @@ const request = require('request');
 const url = require('url');
 const Handlebars = require('hbs');
 
-
 //get data -> later database?
 let data;
 let datapath;
@@ -164,7 +163,7 @@ app.post('/send', (req,res)=>{
         obj = Object.assign({}, notification);
         notification.appId = req.body.appId;
         notification.appName = req.body.appName;
-        request.post('https://' + config.baseUrl + '/api/v1/notification', {json:{subscriptionId:req.body.subscriptionId,notification:obj}}, (error, res2, body) => {
+        request.post('https://' + config.baseUrl + '/notification', {json:{subscriptionId:req.body.subscriptionId,notification:obj}}, (error, res2, body) => {
             if (error) {
                 console.error(error)
                 return
@@ -254,7 +253,7 @@ app.post('/update', (req,res)=>{
                 toEncrypt);
             var content = {"verify":encrypted.toString('base64'), "data": obj};
             console.log(content);
-            request.put('https://' + config.baseUrl + '/api/v1/app', {json: {id:id, content:Buffer.from(JSON.stringify(content)).toString('base64')}}, (error, res2, body) => {
+            request.put('https://' + config.baseUrl + '/app', {json: {id:id, content:Buffer.from(JSON.stringify(content)).toString('base64')}}, (error, res2, body) => {
 
                 if (error) {
                     console.error(error)
@@ -376,7 +375,7 @@ let createNewSP = (obj, res) => {
     }
     obj.baseUrl = base;
     Object.assign(serviceProvider, obj, {cert:certificate});
-    request.post('https://' + config.baseUrl + '/api/v1/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res2, body) => {
+    request.post('https://' + config.baseUrl + '/app', {json:Object.assign({}, obj, {cert:certificate})}, (error, res2, body) => {
 		if (error) {
             console.error(error)
 			return
@@ -433,7 +432,7 @@ createNewAD = (obj, res) => {
         console.log(content);
 
 
-        res.redirect('https://' + config.baseUrl + '/subscribe?id=' + encodeURIComponent(c.id) + '&content=' + encodeURIComponent(Buffer.from(JSON.stringify(content)).toString('base64')));
+        res.redirect('https://' + config.redirectUrl + '/subscribe?id=' + encodeURIComponent(c.id) + '&content=' + encodeURIComponent(Buffer.from(JSON.stringify(content)).toString('base64')));
     }
 }
 
@@ -450,7 +449,7 @@ generatePassphrase = () =>{
 
 defaultConfig = () => {
     var passphrase = "0adf5AD11A23adfAD524f8DFA9495sa7AD3DF6543";
-    var lconfig = {"baseUrl": "dev.hoppercloud.net", "host": "http://localhost", "data": "localfiles/data.json", "port": 5000, "passphrase": passphrase};
+    var lconfig = {"baseUrl": "api-dev.hoppercloud.net/v1", "redirectUrl": "dev.hoppercloud.net", "host": "http://localhost", "data": "localfiles/data.json", "port": 5000, "passphrase": passphrase};
     return lconfig;
 }
 
@@ -474,7 +473,10 @@ try {
 
     datapath = config.data;
     if (!fs.existsSync(datapath)) {
+        var test = datapath.substring(0, datapath.lastIndexOf('/'));
+        fs.mkdirSync(test, { recursive: true });
         data = {"user":[]};
+        updateData();
     }else{
         data = JSON.parse(fs.readFileSync(datapath));
         if(data == {}){
