@@ -9,7 +9,6 @@ const Handlebars = require('hbs');
 
 //get data -> later database?
 let data;
-let datapath;
 let configpath;
 let config;
 
@@ -308,7 +307,7 @@ let hashPassword = (password) => {
 }
 
 let updateData = () =>{
-    fs.writeFile(datapath, JSON.stringify(data), (err) =>{
+    fs.writeFile(config.data, JSON.stringify(data), (err) =>{
         if (err) throw err;
         console.log('data saved');
     });
@@ -453,32 +452,93 @@ defaultConfig = () => {
     return lconfig;
 }
 
+var baseUrl;
+var redirectUrl;
+var host;
+var datac;
+var port;
+var passphrase;
+
 //check for config
 try {
-    if(!process.argv[2]){ 
-        console.log("Specify config!"); 
-        process.exit(1);
+    if(!process.argv[2]){
+        var fail = false;
+        if(process.env.BASEURL) {
+            baseUrl = process.env.BASEURL;
+        }
+        else{
+            console.log("Environment variable BASEURL is missing!");
+            fail = true;
+        }
+        if(process.env.REDIRECTURL) {
+            redirectUrl = process.env.REDIRECTURL;
+        }
+        else {
+            console.log("Environment variable REDIRECTURL is missing!");
+            fail = true;
+        }
+        if(process.env.HOST) {
+            host = process.env.HOST;
+        }
+        else {
+            console.log("Environment variable HOST is missing!");
+            fail = true;
+        }
+        if(process.env.DATA) {
+            datac = process.env.DATA;
+        }
+        else {
+            console.log("Environment variable DATA is missing!");
+            fail = true;
+        }
+        if(process.env.PORT) {
+            port = process.env.PORT;
+        }
+        else {
+            console.log("Environment variable PORT is missing!");
+            fail = true;
+        }
+        if(process.env.PASSPHRASE) {
+            passphrase = process.env.PASSPHRASE;
+        }
+        else {
+            console.log("Environment variable PASSPHRASE is missing!");
+            fail = true;
+        }
+        if(fail){
+            console.log("Use environment variables completely or specifiy config!");
+            process.exit(1);
+        }
+        console.log("Loading config from environment variables");
+        config = {};
+        config.baseUrl = baseUrl;
+        config.redirectUrl = redirectUrl;
+        config.host = host;
+        config.data = datac;
+        config.port = port;
+        config.passphrase = passphrase;
     }
-    configpath = process.argv[2];
-    console.log("Loading config from " + configpath);
-    
-    if (!fs.existsSync(configpath)) {
-        fs.writeFileSync(configpath, JSON.stringify(defaultConfig()));
-        console.log("Could not read config! Default config written to disk!");
-        process.exit(1);
 
+    if(process.argv[2]){
+        configpath = process.argv[2];
+        console.log("Loading config from " + configpath);
+
+        if (!fs.existsSync(configpath)) {
+            fs.writeFileSync(configpath, JSON.stringify(defaultConfig()));
+            console.log("Could not read config! Default config written to disk!");
+            process.exit(1);
+        }
+
+        config = JSON.parse(fs.readFileSync(configpath));
     }
 
-    config = JSON.parse(fs.readFileSync(configpath));
-
-    datapath = config.data;
-    if (!fs.existsSync(datapath)) {
-        var test = datapath.substring(0, datapath.lastIndexOf('/'));
+    if (!fs.existsSync(config.data)) {
+        var test = config.data.substring(0, config.data.lastIndexOf('/'));
         fs.mkdirSync(test, { recursive: true });
         data = {"user":[]};
         updateData();
     }else{
-        data = JSON.parse(fs.readFileSync(datapath));
+        data = JSON.parse(fs.readFileSync(config.data));
         if(data == {}){
             data = {"user":[]};
         }
